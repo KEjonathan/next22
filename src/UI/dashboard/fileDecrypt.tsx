@@ -1,23 +1,36 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const FileDecrypt: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [message, setMessage] = useState<string>('');
+  const [files, setFiles] = useState<string[]>([]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
-    }
-  };
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const response = await fetch('/api/decrypt');
+        const result = await response.json();
+        if (response.ok) {
+          setFiles(result.files);
+        } else {
+          setMessage(`Error: ${result.error}`);
+        }
+      } catch (error) {
+        setMessage('An unexpected error occurred.');
+      }
+    };
+
+    fetchFiles();
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (file) {
+    if (fileName) {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('fileName', fileName);
       formData.append('password', password);
 
       try {
@@ -47,11 +60,16 @@ const FileDecrypt: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-2 text-sm font-medium">Select Encrypted File</label>
-            <input
-              type="file"
-              onChange={handleFileChange}
+            <select
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
               className="block w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 placeholder-gray-500 text-gray-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
+            >
+              <option value="" disabled>Select a file</option>
+              {files.map((file) => (
+                <option key={file} value={file}>{file}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block mb-2 text-sm font-medium">Password</label>
@@ -64,7 +82,7 @@ const FileDecrypt: React.FC = () => {
           </div>
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             Decrypt File
           </button>

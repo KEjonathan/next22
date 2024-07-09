@@ -72,7 +72,13 @@ export async function POST(request: NextRequest) {
       output.on('error', reject);
     });
 
-    fs.unlinkSync(filePath);
+    // Ensure file exists before attempting to delete
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`File ${filePath} deleted successfully`);
+    } else {
+      console.error(`File ${filePath} does not exist, cannot delete`);
+    }
 
     const metadata = {
       filePath: encryptedFilePath,

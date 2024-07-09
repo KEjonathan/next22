@@ -46,7 +46,7 @@ export default function Page() {
               <Image src="/members/pik1.jpg" alt="Member 1" width={60} height={60} className="h-12 w-12 rounded-3xl" />
               <Image src="/members/Emmma2.jpg" alt="Member 2" width={60} height={60} className="h-12 w-12 rounded-3xl" />
               <Image src="/members/allan.jpg" alt="Member 3" width={60} height={60} className="h-12 w-12 rounded-3xl" />
-              <Image src="/members/quin.png" alt="Member 4" width={60} height={60} className="h-12 w-12 rounded-3xl" />
+              <Image src="/members/gift.jpg" alt="Member 4" width={60} height={60} className="h-12 w-12 rounded-3xl" />
             </div>
           </section>
 

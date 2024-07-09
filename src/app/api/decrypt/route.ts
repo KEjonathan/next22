@@ -12,6 +12,13 @@ const METADATA_FILE = path.join(process.cwd(), 'metadata.json');
 if (!fs.existsSync(ENCRYPTED_DIR)) fs.mkdirSync(ENCRYPTED_DIR);
 if (!fs.existsSync(DECRYPTED_DIR)) fs.mkdirSync(DECRYPTED_DIR);
 
+// Function to retrieve metadata for a given file path
+function getMetadata(filePath: string) {
+  if (!fs.existsSync(METADATA_FILE)) return null;
+  const data = JSON.parse(fs.readFileSync(METADATA_FILE, 'utf-8'));
+  return data.find((file: any) => file.filePath === filePath);
+}
+
 // Function to convert Web Stream to Node.js Readable Stream
 function webStreamToNodeStream(webStream: ReadableStream<Uint8Array>): Readable {
   const nodeStream = new Readable({ read() {} });
@@ -31,40 +38,32 @@ function webStreamToNodeStream(webStream: ReadableStream<Uint8Array>): Readable 
   return nodeStream;
 }
 
-// Function to retrieve metadata for a given file path
-function getMetadata(filePath: string) {
-  if (!fs.existsSync(METADATA_FILE)) return null;
-  const data = JSON.parse(fs.readFileSync(METADATA_FILE, 'utf-8'));
-  return data.find((file: any) => file.filePath === filePath);
+export async function GET() {
+  try {
+    const files = fs.readdirSync(ENCRYPTED_DIR);
+    return NextResponse.json({ files }, { status: 200 });
+  } catch (error) {
+    console.error('Error listing encrypted files:', error);
+    return NextResponse.json({ error: `Error listing files: ${error.message}` }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const fileName = formData.get('fileName') as string;
     const password = formData.get('password') as string;
 
-    if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    if (!fileName) return NextResponse.json({ error: 'No file name provided' }, { status: 400 });
 
-    const filePath = path.join(ENCRYPTED_DIR, file.name);
+    const filePath = path.join(ENCRYPTED_DIR, fileName);
     const metadata = getMetadata(filePath);
 
     if (!metadata || metadata.password !== password) {
       return NextResponse.json({ error: 'Invalid password or metadata not found' }, { status: 400 });
     }
 
-    const decryptedFilePath = path.join(DECRYPTED_DIR, file.name);
-
-    // Convert the Blob to a Node.js readable stream
-    const readableStream = webStreamToNodeStream(file.stream());
-
-    // Save the uploaded file
-    const fileStream = fs.createWriteStream(filePath);
-    await new Promise<void>((resolve, reject) => {
-      readableStream.pipe(fileStream)
-        .on('finish', resolve)
-        .on('error', reject);
-    });
+    const decryptedFilePath = path.join(DECRYPTED_DIR, fileName);
 
     // Decrypt the file
     const algorithm = 'aes-256-cbc';
